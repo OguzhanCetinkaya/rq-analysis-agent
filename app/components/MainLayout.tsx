@@ -77,14 +77,26 @@ const MainLayout = () => {
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
-    if (file && selectedProject) {
-      const newDocument = {
-        name: file.name,
-        filePath: `files/${file.name}`,
-        ProjectId: selectedProject.id,
-      };
-
-      setDocuments((prev) => [...prev, newDocument]);
+    const allowedFileTypes = ['application/pdf', 'text/markdown', 'text/plain', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+  
+    if (file && selectedProject && allowedFileTypes.includes(file.type)) {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('projectId', selectedProject.id);
+  
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+  
+      if (response.ok) {
+        const newDocument = await response.json();
+        setDocuments((prev) => [...prev, newDocument]);
+      } else {
+        console.error('File upload failed');
+      }
+    } else {
+      alert('Invalid file type. Only PDF, MD, TXT, DOC, and DOCX files are allowed.');
     }
   };
 
