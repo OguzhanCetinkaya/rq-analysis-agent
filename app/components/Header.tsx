@@ -1,3 +1,5 @@
+"use client"
+
 import Link from "next/link"
 import type React from "react"
 import { usePathname } from "next/navigation"
@@ -30,14 +32,6 @@ const Header: React.FC = () => {
               Dashboard
             </Link>
           </li>
-          <li>
-            <Link
-              href="/contact"
-              className={`text-white hover:text-gray-200 ${pathname === "/contact" ? "underline" : ""}`}
-            >
-              Contact
-            </Link>
-          </li>
         </ul>
       </nav>
     </header>
@@ -45,4 +39,3 @@ const Header: React.FC = () => {
 }
 
 export default Header
-

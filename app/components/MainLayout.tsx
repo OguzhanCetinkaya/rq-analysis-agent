@@ -5,7 +5,7 @@ import { Plus, Upload, Send, Trash2, X, Loader } from "lucide-react"
 
 const MainLayout = () => {
   // Simulated project data store
-  const projectsData = {
+  const [projectsData, setProjectsData] = useState({
     1: {
       id: 1,
       name: "Project A",
@@ -33,7 +33,7 @@ const MainLayout = () => {
         { id: 5, text: "Thank you. I'll analyze the proposal now...", sender: "ai" },
       ],
     },
-  }
+  })
 
   const [projects, setProjects] = useState(Object.values(projectsData))
   const [selectedProject, setSelectedProject] = useState(null)
@@ -56,7 +56,7 @@ const MainLayout = () => {
       setDocuments([])
       setMessages([])
     }
-  }, [selectedProject])
+  }, [selectedProject, projectsData])
 
   const handleNewProject = () => {
     const projectName = prompt("Enter project name:")
@@ -76,7 +76,7 @@ const MainLayout = () => {
 
       // Update both the projects list and data store
       setProjects((prev) => [...prev, newProject])
-      projectsData[newProject.id] = newProject
+      setProjectsData((prev) => ({ ...prev, [newProject.id]: newProject }))
 
       // Automatically select the new project
       setSelectedProject(newProject)
@@ -86,7 +86,11 @@ const MainLayout = () => {
   const handleDeleteProject = (projectId) => {
     if (window.confirm("Are you sure you want to delete this project?")) {
       setProjects(projects.filter((p) => p.id !== projectId))
-      delete projectsData[projectId]
+      setProjectsData((prev) => {
+        const newData = { ...prev }
+        delete newData[projectId]
+        return newData
+      })
 
       if (selectedProject?.id === projectId) {
         setSelectedProject(null)
@@ -106,7 +110,13 @@ const MainLayout = () => {
       // Update both state and project data store
       const updatedDocuments = [...documents, newDocument]
       setDocuments(updatedDocuments)
-      projectsData[selectedProject.id].documents = updatedDocuments
+      setProjectsData((prev) => ({
+        ...prev,
+        [selectedProject.id]: {
+          ...prev[selectedProject.id],
+          documents: updatedDocuments,
+        },
+      }))
     }
   }
 
@@ -114,7 +124,13 @@ const MainLayout = () => {
     if (window.confirm("Are you sure you want to delete this document?")) {
       const updatedDocuments = documents.filter((d) => d.id !== docId)
       setDocuments(updatedDocuments)
-      projectsData[selectedProject.id].documents = updatedDocuments
+      setProjectsData((prev) => ({
+        ...prev,
+        [selectedProject.id]: {
+          ...prev[selectedProject.id],
+          documents: updatedDocuments,
+        },
+      }))
 
       if (selectedDocument?.id === docId) {
         setSelectedDocument(null)
@@ -133,7 +149,13 @@ const MainLayout = () => {
 
       const updatedMessages = [...messages, newUserMessage]
       setMessages(updatedMessages)
-      projectsData[selectedProject.id].messages = updatedMessages
+      setProjectsData((prev) => ({
+        ...prev,
+        [selectedProject.id]: {
+          ...prev[selectedProject.id],
+          messages: updatedMessages,
+        },
+      }))
       setNewMessage("")
 
       // Simulate AI processing
@@ -147,7 +169,13 @@ const MainLayout = () => {
 
         const finalMessages = [...updatedMessages, aiResponse]
         setMessages(finalMessages)
-        projectsData[selectedProject.id].messages = finalMessages
+        setProjectsData((prev) => ({
+          ...prev,
+          [selectedProject.id]: {
+            ...prev[selectedProject.id],
+            messages: finalMessages,
+          },
+        }))
         setIsAiProcessing(false)
       }, 2000)
     }
@@ -287,4 +315,3 @@ const MainLayout = () => {
 }
 
 export default MainLayout
-
