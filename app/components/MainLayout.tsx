@@ -18,8 +18,13 @@ const MainLayout = () => {
       id: 1,
       name: "Project A",
       documents: [
-        { id: 1, name: "requirements.pdf", content: "Initial requirements document" },
-        { id: 2, name: "specs.docx", content: "specs.docx" },
+        {
+          id: 1,
+          name: "requirements.pdf",
+          content: "Initial requirements document",
+          filePath: "files/requirements.pdf",
+        },
+        { id: 2, name: "specs.docx", content: "Technical specifications", filePath: "files/specs.docx" },
       ],
       messages: [
         { id: 1, text: "Hello! I'm your AI assistant. Let's analyze your project requirements.", sender: "ai" },
@@ -34,7 +39,9 @@ const MainLayout = () => {
     2: {
       id: 2,
       name: "Project B",
-      documents: [{ id: 3, name: "Tom Lee-CTO1.1.1.Intro_v10.pdf", content: "Tom Lee-CTO1.1.1.Intro_v10.pdf" }],
+      documents: [{ id: 3, name: "proposal.pdf", content: "Project proposal details", filePath: "files/proposal.pdf" },
+        { id: 4, name: "SDLC Agents.txt", content: "SDLC Agents", filePath: "files/SDLC Agents.txt" }
+      ],
       messages: [
         { id: 1, text: "Hello! I'm your AI assistant. Let's analyze your project requirements.", sender: "ai" },
         { id: 4, text: "I've uploaded the proposal document.", sender: "user" },
@@ -113,6 +120,7 @@ const MainLayout = () => {
         id: Math.max(...documents.map((d) => d.id), 0) + 1,
         name: file.name,
         content: `Preview content for ${file.name}`,
+        filePath: `files/${file.name}`, // Add this line
       }
 
       const updatedDocuments = [...documents, newDocument]
@@ -196,18 +204,30 @@ const MainLayout = () => {
 
     if (type === "pdf") {
       setPreviewType("pdf")
-      setPreviewContent(content)
+      setPreviewContent(document.filePath)
     } else if (type === "txt") {
       setPreviewType("txt")
       setPreviewContent(content)
     } else if (type === "doc" || type === "docx") {
       setPreviewType("doc")
       try {
-        const result = await mammoth.convertToHtml({ arrayBuffer: content })
-        setPreviewContent(result.value)
+        // Simulate a minimal DOCX file structure
+        const minimalDocx = new ArrayBuffer(100)
+        const view = new Uint8Array(minimalDocx)
+        // Set some bytes to simulate a ZIP structure (which DOCX uses)
+        view[0] = 0x50 // 'P'
+        view[1] = 0x4b // 'K'
+        view[2] = 0x03 // '\x03'
+        view[3] = 0x04 // '\x04'
+
+        // Use mammoth to convert our simulated DOCX to HTML
+        const result = await mammoth.convertToHtml({ arrayBuffer: minimalDocx })
+
+        // Append our original content to the result
+        setPreviewContent(result.value + "<p>" + content + "</p>")
       } catch (error) {
         console.error("Error converting DOC file:", error)
-        setPreviewContent("Error loading document")
+        setPreviewContent("Error loading document: " + error.message)
       }
     } else {
       setPreviewType("unsupported")
