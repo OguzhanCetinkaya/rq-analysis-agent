@@ -1,287 +1,189 @@
-"use client"
+import { useState, useEffect } from "react";
+import { Plus, Upload, Send, Trash2, X, Loader, FileText, File } from "lucide-react";
+import { Viewer, Worker } from "@react-pdf-viewer/core";
+import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
+import mammoth from "mammoth";
+import { marked } from "marked";
+import { version as pdfjsVersion } from "pdfjs-dist";
 
-import { useState, useEffect } from "react"
-import { Plus, Upload, Send, Trash2, X, Loader, FileText, File } from "lucide-react"
-import { Viewer, Worker } from "@react-pdf-viewer/core"
-import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout"
-import mammoth from "mammoth"
-
-import "@react-pdf-viewer/core/lib/styles/index.css"
-import "@react-pdf-viewer/default-layout/lib/styles/index.css"
-
-// Import pdfjs-dist for worker configuration
-import { version } from "pdfjs-dist"
+import "@react-pdf-viewer/core/lib/styles/index.css";
+import "@react-pdf-viewer/default-layout/lib/styles/index.css";
 
 const MainLayout = () => {
-  const [projectsData, setProjectsData] = useState<Record<number, Project>>({
-    1: {
-      id: 1,
-      name: "Project A",
-      documents: [
-        {
-          id: 1,
-          name: "requirements.pdf",
-          content: "Initial requirements document",
-          filePath: "files/requirements.pdf",
-        },
-        { id: 2, name: "specs.docx", content: "Technical specifications", filePath: "files/specs.docx" },
-      ],
-      messages: [
-        { id: 1, text: "Hello! I'm your AI assistant. Let's analyze your project requirements.", sender: "ai" },
-        { id: 2, text: "Can you tell me more about the project scope?", sender: "user" },
-        {
-          id: 3,
-          text: "Based on the requirements document, I see this is a web application project. Let me ask a few questions...",
-          sender: "ai",
-        },
-      ],
-    },
-    2: {
-      id: 2,
-      name: "Project B",
-      documents: [{ id: 3, name: "proposal.pdf", content: "Project proposal details", filePath: "files/proposal.pdf" },
-        { id: 4, name: "SDLC Agents.txt", content: "SDLC Agents", filePath: "files/SDLC Agents.txt" }
-      ],
-      messages: [
-        { id: 1, text: "Hello! I'm your AI assistant. Let's analyze your project requirements.", sender: "ai" },
-        { id: 4, text: "I've uploaded the proposal document.", sender: "user" },
-        { id: 5, text: "Thank you. I'll analyze the proposal now...", sender: "ai" },
-      ],
-    },
-  })
+  const [projects, setProjects] = useState([]);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [documents, setDocuments] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [isAiProcessing, setIsAiProcessing] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewContent, setPreviewContent] = useState(null);
+  const [previewType, setPreviewType] = useState(null);
 
-  const [projects, setProjects] = useState(Object.values(projectsData))
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
-  const [documents, setDocuments] = useState<Document[]>([])
-  const [messages, setMessages] = useState([])
-  const [newMessage, setNewMessage] = useState("")
-  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null)
-  const [isAiProcessing, setIsAiProcessing] = useState(false)
-  const [showPreview, setShowPreview] = useState(false)
-  const [previewContent, setPreviewContent] = useState<string | null>(null)
-  const [previewType, setPreviewType] = useState<"pdf" | "txt" | "md" | "doc" | "unsupported" | null>(null)
+  const defaultLayoutPluginInstance = defaultLayoutPlugin();
 
-  const defaultLayoutPluginInstance = defaultLayoutPlugin()
+  useEffect(() => {
+    const fetchProjects = async () => {
+      const response = await fetch('/api/projects');
+      const projects = await response.json();
+      setProjects(projects);
+    };
+
+    fetchProjects();
+  }, []);
 
   useEffect(() => {
     if (selectedProject) {
-      const projectData = projectsData[selectedProject.id]
-      if (projectData) {
-        setDocuments(projectData.documents)
-        setMessages(projectData.messages)
-      }
+      setDocuments(selectedProject.Documents);
+      setMessages(selectedProject.Messages);
     } else {
-      setDocuments([])
-      setMessages([])
+      setDocuments([]);
+      setMessages([]);
     }
-  }, [selectedProject, projectsData])
+  }, [selectedProject]);
 
-  const handleNewProject = () => {
-    const projectName = prompt("Enter project name:")
+  const handleNewProject = async () => {
+    const projectName = prompt("Enter project name:");
     if (projectName) {
-      const newProject = {
-        id: Math.max(...projects.map((p) => p.id), 0) + 1,
-        name: projectName,
-        documents: [],
-        messages: [
-          {
-            id: 1,
-            text: "Hello! I'm your AI assistant. Let's analyze your project requirements.",
-            sender: "ai",
-          },
-        ],
-      }
-
-      setProjects((prev) => [...prev, newProject])
-      setProjectsData((prev) => ({ ...prev, [newProject.id]: newProject }))
-      setSelectedProject(newProject)
+      const response = await fetch('/api/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: projectName }),
+      });
+      const newProject = await response.json();
+      setProjects((prev) => [...prev, newProject]);
+      setSelectedProject(newProject);
     }
-  }
+  };
 
-  interface Document {
-    id: number
-    name: string
-    content: string
-    filePath: string
-  }
-
-  interface Message {
-    id: number
-    text: string
-    sender: "ai" | "user"
-  }
-
-  interface Project {
-    id: number
-    name: string
-    documents: Document[]
-    messages: Message[]
-  }
-
-  const handleDeleteProject = (projectId: number) => {
+  const handleDeleteProject = async (projectId) => {
     if (window.confirm("Are you sure you want to delete this project?")) {
-      setProjects(projects.filter((p) => p.id !== projectId))
-      setProjectsData((prev) => {
-        const newData = { ...prev }
-        delete newData[projectId]
-        return newData
-      })
-
+      await fetch('/api/projects', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: projectId }),
+      });
+      setProjects(projects.filter((p) => p.id !== projectId));
       if (selectedProject?.id === projectId) {
-        setSelectedProject(null)
+        setSelectedProject(null);
       }
     }
-  }
+  };
 
-  interface FileUploadEvent extends React.ChangeEvent<HTMLInputElement> {
-    target: HTMLInputElement & EventTarget & { files: FileList }
-  }
-
-  const handleFileUpload = (event: FileUploadEvent) => {
-    const file = event.target.files[0]
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
     if (file && selectedProject) {
-      const newDocument: Document = {
-        id: Math.max(...documents.map((d) => d.id), 0) + 1,
+      const newDocument = {
         name: file.name,
         content: `Preview content for ${file.name}`,
         filePath: `files/${file.name}`,
-      }
+        ProjectId: selectedProject.id,
+      };
 
-      const updatedDocuments: Document[] = [...documents, newDocument]
-      setDocuments(updatedDocuments)
-      setProjectsData((prev) => ({
-        ...prev,
-        [selectedProject.id]: {
-          ...prev[selectedProject.id],
-          documents: updatedDocuments,
-        },
-      }))
+      setDocuments((prev) => [...prev, newDocument]);
     }
-  }
+  };
 
-  interface Document {
-    id: number
-    name: string
-    content: string
-    filePath: string
-  }
-
-  const handleDeleteDocument = (docId: number) => {
+  const handleDeleteDocument = async (docId) => {
     if (window.confirm("Are you sure you want to delete this document?")) {
-      const updatedDocuments = documents.filter((d) => d.id !== docId)
-      setDocuments(updatedDocuments)
-      setProjectsData((prev) => ({
-        ...prev,
-        [selectedProject.id]: {
-          ...prev[selectedProject.id],
-          documents: updatedDocuments,
-        },
-      }))
-
+      setDocuments(documents.filter((d) => d.id !== docId));
       if (selectedDocument?.id === docId) {
-        setSelectedDocument(null)
-        setShowPreview(false)
+        setSelectedDocument(null);
+        setShowPreview(false);
       }
     }
-  }
+  };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (newMessage.trim() && selectedProject) {
       const newUserMessage = {
-        id: Math.max(...messages.map((m) => m.id), 0) + 1,
         text: newMessage,
         sender: "user",
-      }
+        ProjectId: selectedProject.id,
+      };
 
-      const updatedMessages = [...messages, newUserMessage]
-      setMessages(updatedMessages)
-      setProjectsData((prev) => ({
-        ...prev,
-        [selectedProject.id]: {
-          ...prev[selectedProject.id],
-          messages: updatedMessages,
-        },
-      }))
-      setNewMessage("")
+      const updatedMessages = [...messages, newUserMessage];
+      setMessages(updatedMessages);
+      setNewMessage("");
 
-      setIsAiProcessing(true)
-      setTimeout(() => {
+      setIsAiProcessing(true);
+      setTimeout(async () => {
         const aiResponse = {
-          id: Math.max(...updatedMessages.map((m) => m.id), 0) + 1,
           text: "I'm analyzing your request and the project documents...",
           sender: "ai",
-        }
+          ProjectId: selectedProject.id,
+        };
 
-        const finalMessages = [...updatedMessages, aiResponse]
-        setMessages(finalMessages)
-        setProjectsData((prev) => ({
-          ...prev,
-          [selectedProject.id]: {
-            ...prev[selectedProject.id],
-            messages: finalMessages,
-          },
-        }))
-        setIsAiProcessing(false)
-      }, 2000)
+        const finalMessages = [...updatedMessages, aiResponse];
+        setMessages(finalMessages);
+        setIsAiProcessing(false);
+      }, 2000);
     }
-  }
+  };
 
-  const handleDocumentClick = async (document: Document) => {
-    setSelectedDocument(document)
-    setShowPreview(true)
-  
-    const content = document.content
-    const type = document.name.split(".").pop()?.toLowerCase() || ""
-  
+  const handleDocumentClick = async (document) => {
+    setSelectedDocument(document);
+    setShowPreview(true);
+
+    const content = document.content;
+    const type = document.name.split(".").pop()?.toLowerCase() || "";
+
     if (type === "pdf") {
-      setPreviewType("pdf")
-      setPreviewContent(document.filePath)
+      setPreviewType("pdf");
+      setPreviewContent(document.filePath);
     } else if (type === "txt") {
-      setPreviewType("txt")
-      setPreviewContent(content)
+      setPreviewType("txt");
+      setPreviewContent(content);
     } else if (type === "md") {
-      setPreviewType("md")
-      setPreviewContent(content)
+      setPreviewType("md");
+      setPreviewContent(content);
     } else if (type === "doc" || type === "docx") {
-      setPreviewType("doc")
+      setPreviewType("doc");
       try {
-        const minimalDocx = new ArrayBuffer(100)
-        const view = new Uint8Array(minimalDocx)
-        view[0] = 0x50 // 'P'
-        view[1] = 0x4b // 'K'
-        view[2] = 0x03 // '\x03'
-        view[3] = 0x04 // '\x04'
-  
-        const result = await mammoth.convertToHtml({ arrayBuffer: minimalDocx })
-        setPreviewContent(result.value + "<p>" + content + "</p>")
+        const minimalDocx = new ArrayBuffer(100);
+        const view = new Uint8Array(minimalDocx);
+        view[0] = 0x50; // 'P'
+        view[1] = 0x4b; // 'K'
+        view[2] = 0x03; // '\x03'
+        view[3] = 0x04; // '\x04'
+
+        const result = await mammoth.convertToHtml({ arrayBuffer: minimalDocx });
+        setPreviewContent(result.value + "<p>" + content + "</p>");
       } catch (error) {
-        console.error("Error converting DOC file:", error)
-        setPreviewContent("Error loading document: " + error.message)
+        console.error("Error converting DOC file:", error);
+        setPreviewContent("Error loading document: " + error.message);
       }
     } else {
-      setPreviewType("unsupported")
-      setPreviewContent("Unsupported file type")
+      setPreviewType("unsupported");
+      setPreviewContent("Unsupported file type");
     }
-  }
+  };
 
   const renderPreview = () => {
     switch (previewType) {
       case "pdf":
         return (
-          <Worker workerUrl={`https://unpkg.com/pdfjs-dist@${version}/build/pdf.worker.min.js`}>
+          <Worker workerUrl={`https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.js`}>
             <div style={{ height: "100%" }}>
               <Viewer fileUrl={previewContent} plugins={[defaultLayoutPluginInstance]} />
             </div>
           </Worker>
-        )
+        );
       case "txt":
-        return <pre className="whitespace-pre-wrap">{previewContent}</pre>
+        return <pre className="whitespace-pre-wrap">{previewContent}</pre>;
+      case "md":
+        return <div dangerouslySetInnerHTML={{ __html: marked(previewContent) }} />;
       case "doc":
-        return <div dangerouslySetInnerHTML={{ __html: previewContent }} />
+        return <div dangerouslySetInnerHTML={{ __html: previewContent }} />;
       default:
-        return <p>{previewContent}</p>
+        return <p>{previewContent}</p>;
     }
-  }
+  };
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -398,7 +300,7 @@ const MainLayout = () => {
               disabled={!selectedProject}
               onKeyPress={(e) => {
                 if (e.key === "Enter") {
-                  handleSendMessage()
+                  handleSendMessage();
                 }
               }}
             />
@@ -413,8 +315,7 @@ const MainLayout = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default MainLayout
-
+export default MainLayout;
