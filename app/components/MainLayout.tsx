@@ -80,7 +80,6 @@ const MainLayout = () => {
     if (file && selectedProject) {
       const newDocument = {
         name: file.name,
-        content: `Preview content for ${file.name}`,
         filePath: `files/${file.name}`,
         ProjectId: selectedProject.id,
       };
@@ -130,17 +129,15 @@ const MainLayout = () => {
     setSelectedDocument(document);
     setShowPreview(true);
 
-    const content = document.content;
     const type = document.name.split(".").pop()?.toLowerCase() || "";
 
     if (type === "pdf") {
       setPreviewType("pdf");
       setPreviewContent(document.filePath);
-    } else if (type === "txt") {
-      setPreviewType("txt");
-      setPreviewContent(content);
-    } else if (type === "md") {
-      setPreviewType("md");
+    } else if (type === "txt" || type === "md") {
+      const response = await fetch(document.filePath);
+      const content = await response.text();
+      setPreviewType(type);
       setPreviewContent(content);
     } else if (type === "doc" || type === "docx") {
       setPreviewType("doc");
@@ -153,7 +150,7 @@ const MainLayout = () => {
         view[3] = 0x04; // '\x04'
 
         const result = await mammoth.convertToHtml({ arrayBuffer: minimalDocx });
-        setPreviewContent(result.value + "<p>" + content + "</p>");
+        setPreviewContent(result.value);
       } catch (error) {
         console.error("Error converting DOC file:", error);
         setPreviewContent("Error loading document: " + error.message);
