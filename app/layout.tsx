@@ -20,6 +20,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="stylesheet" href="https://unpkg.com/react-pdf@5.7.2/dist/esm/Page/AnnotationLayer.css" />
+      </head>
       <body className={inter.className}>
         <DynamicHeader />
         {children}

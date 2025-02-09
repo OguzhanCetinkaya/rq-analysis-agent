@@ -1,17 +1,25 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Plus, Upload, Send, Trash2, X, Loader } from "lucide-react"
+import { Plus, Upload, Send, Trash2, X, Loader, FileText, File } from "lucide-react"
+import { Viewer, Worker } from "@react-pdf-viewer/core"
+import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout"
+import mammoth from "mammoth"
+
+import "@react-pdf-viewer/core/lib/styles/index.css"
+import "@react-pdf-viewer/default-layout/lib/styles/index.css"
+
+// Import pdfjs-dist for worker configuration
+import { version } from "pdfjs-dist"
 
 const MainLayout = () => {
-  // Simulated project data store
   const [projectsData, setProjectsData] = useState({
     1: {
       id: 1,
       name: "Project A",
       documents: [
         { id: 1, name: "requirements.pdf", content: "Initial requirements document" },
-        { id: 2, name: "specs.docx", content: "Technical specifications" },
+        { id: 2, name: "specs.docx", content: "specs.docx" },
       ],
       messages: [
         { id: 1, text: "Hello! I'm your AI assistant. Let's analyze your project requirements.", sender: "ai" },
@@ -26,7 +34,7 @@ const MainLayout = () => {
     2: {
       id: 2,
       name: "Project B",
-      documents: [{ id: 3, name: "proposal.pdf", content: "Project proposal details" }],
+      documents: [{ id: 3, name: "Tom Lee-CTO1.1.1.Intro_v10.pdf", content: "Tom Lee-CTO1.1.1.Intro_v10.pdf" }],
       messages: [
         { id: 1, text: "Hello! I'm your AI assistant. Let's analyze your project requirements.", sender: "ai" },
         { id: 4, text: "I've uploaded the proposal document.", sender: "user" },
@@ -43,8 +51,11 @@ const MainLayout = () => {
   const [selectedDocument, setSelectedDocument] = useState(null)
   const [isAiProcessing, setIsAiProcessing] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
+  const [previewContent, setPreviewContent] = useState(null)
+  const [previewType, setPreviewType] = useState(null)
 
-  // Load project data when a project is selected
+  const defaultLayoutPluginInstance = defaultLayoutPlugin()
+
   useEffect(() => {
     if (selectedProject) {
       const projectData = projectsData[selectedProject.id]
@@ -74,11 +85,8 @@ const MainLayout = () => {
         ],
       }
 
-      // Update both the projects list and data store
       setProjects((prev) => [...prev, newProject])
       setProjectsData((prev) => ({ ...prev, [newProject.id]: newProject }))
-
-      // Automatically select the new project
       setSelectedProject(newProject)
     }
   }
@@ -107,7 +115,6 @@ const MainLayout = () => {
         content: `Preview content for ${file.name}`,
       }
 
-      // Update both state and project data store
       const updatedDocuments = [...documents, newDocument]
       setDocuments(updatedDocuments)
       setProjectsData((prev) => ({
@@ -158,7 +165,6 @@ const MainLayout = () => {
       }))
       setNewMessage("")
 
-      // Simulate AI processing
       setIsAiProcessing(true)
       setTimeout(() => {
         const aiResponse = {
@@ -178,6 +184,53 @@ const MainLayout = () => {
         }))
         setIsAiProcessing(false)
       }, 2000)
+    }
+  }
+
+  const handleDocumentClick = async (document) => {
+    setSelectedDocument(document)
+    setShowPreview(true)
+
+    const content = document.content
+    const type = document.name.split(".").pop().toLowerCase()
+
+    if (type === "pdf") {
+      setPreviewType("pdf")
+      setPreviewContent(content)
+    } else if (type === "txt") {
+      setPreviewType("txt")
+      setPreviewContent(content)
+    } else if (type === "doc" || type === "docx") {
+      setPreviewType("doc")
+      try {
+        const result = await mammoth.convertToHtml({ arrayBuffer: content })
+        setPreviewContent(result.value)
+      } catch (error) {
+        console.error("Error converting DOC file:", error)
+        setPreviewContent("Error loading document")
+      }
+    } else {
+      setPreviewType("unsupported")
+      setPreviewContent("Unsupported file type")
+    }
+  }
+
+  const renderPreview = () => {
+    switch (previewType) {
+      case "pdf":
+        return (
+          <Worker workerUrl={`https://unpkg.com/pdfjs-dist@${version}/build/pdf.worker.min.js`}>
+            <div style={{ height: "100%" }}>
+              <Viewer fileUrl={previewContent} plugins={[defaultLayoutPluginInstance]} />
+            </div>
+          </Worker>
+        )
+      case "txt":
+        return <pre className="whitespace-pre-wrap">{previewContent}</pre>
+      case "doc":
+        return <div dangerouslySetInnerHTML={{ __html: previewContent }} />
+      default:
+        return <p>{previewContent}</p>
     }
   }
 
@@ -230,12 +283,12 @@ const MainLayout = () => {
                 selectedDocument?.id === document.id ? "bg-blue-100 text-blue-600" : "hover:bg-gray-100"
               }`}
             >
-              <span
-                onClick={() => {
-                  setSelectedDocument(document)
-                  setShowPreview(true)
-                }}
-              >
+              <span onClick={() => handleDocumentClick(document)} className="flex items-center">
+                {document.name.endsWith(".pdf") ? (
+                  <FileText size={16} className="mr-2" />
+                ) : (
+                  <File size={16} className="mr-2" />
+                )}
                 {document.name}
               </span>
               <button
@@ -253,15 +306,15 @@ const MainLayout = () => {
       <div className="flex-1 flex flex-col bg-white">
         {/* Document Preview Modal */}
         {showPreview && selectedDocument && (
-          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
-            <div className="bg-white rounded-lg w-2/3 h-2/3 p-4 flex flex-col">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
+            <div className="bg-white rounded-lg w-3/4 h-3/4 p-4 flex flex-col">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold">{selectedDocument.name}</h3>
                 <button onClick={() => setShowPreview(false)} className="p-2 hover:bg-gray-100 rounded-full">
                   <X size={20} />
                 </button>
               </div>
-              <div className="flex-1 border rounded p-4 overflow-auto">{selectedDocument.content}</div>
+              <div className="flex-1 border rounded p-4 overflow-auto">{renderPreview()}</div>
             </div>
           </div>
         )}
@@ -315,3 +368,4 @@ const MainLayout = () => {
 }
 
 export default MainLayout
+
