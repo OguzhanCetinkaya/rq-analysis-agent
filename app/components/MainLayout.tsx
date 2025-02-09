@@ -117,23 +117,66 @@ const MainLayout = () => {
         sender: "user",
         ProjectId: selectedProject.id,
       };
-
-      const updatedMessages = [...messages, newUserMessage];
+  
+      // Save the user message to the database
+      const response = await fetch('/api/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newUserMessage),
+      });
+  
+      if (!response.ok) {
+        console.error('Failed to save user message');
+        return;
+      }
+  
+      const savedUserMessage = await response.json();
+  
+      const updatedMessages = [...messages, savedUserMessage];
       setMessages(updatedMessages);
       setNewMessage("");
-
+  
       setIsAiProcessing(true);
-      setTimeout(async () => {
-        const aiResponse = {
-          text: "I'm analyzing your request and the project documents...",
-          sender: "ai",
-          ProjectId: selectedProject.id,
-        };
-
-        const finalMessages = [...updatedMessages, aiResponse];
-        setMessages(finalMessages);
+  
+      // Send the conversation to OpenAI API
+      const aiResponse = await fetch('/api/openai', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ messages: updatedMessages }),
+      });
+  
+      if (!aiResponse.ok) {
+        console.error('Failed to get AI response');
         setIsAiProcessing(false);
-      }, 2000);
+        return;
+      }
+  
+      const aiMessage = await aiResponse.json();
+  
+      // Save the AI message to the database
+      const savedAiMessageResponse = await fetch('/api/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(aiMessage),
+      });
+  
+      if (!savedAiMessageResponse.ok) {
+        console.error('Failed to save AI message');
+        setIsAiProcessing(false);
+        return;
+      }
+  
+      const savedAiMessage = await savedAiMessageResponse.json();
+  
+      const finalMessages = [...updatedMessages, savedAiMessage];
+      setMessages(finalMessages);
+      setIsAiProcessing(false);
     }
   };
 
