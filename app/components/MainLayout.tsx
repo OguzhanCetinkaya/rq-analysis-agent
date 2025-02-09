@@ -13,7 +13,7 @@ import "@react-pdf-viewer/default-layout/lib/styles/index.css"
 import { version } from "pdfjs-dist"
 
 const MainLayout = () => {
-  const [projectsData, setProjectsData] = useState({
+  const [projectsData, setProjectsData] = useState<Record<number, Project>>({
     1: {
       id: 1,
       name: "Project A",
@@ -51,15 +51,15 @@ const MainLayout = () => {
   })
 
   const [projects, setProjects] = useState(Object.values(projectsData))
-  const [selectedProject, setSelectedProject] = useState(null)
-  const [documents, setDocuments] = useState([])
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+  const [documents, setDocuments] = useState<Document[]>([])
   const [messages, setMessages] = useState([])
   const [newMessage, setNewMessage] = useState("")
-  const [selectedDocument, setSelectedDocument] = useState(null)
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null)
   const [isAiProcessing, setIsAiProcessing] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
-  const [previewContent, setPreviewContent] = useState(null)
-  const [previewType, setPreviewType] = useState(null)
+  const [previewContent, setPreviewContent] = useState<string | null>(null)
+  const [previewType, setPreviewType] = useState<"pdf" | "txt" | "md" | "doc" | "unsupported" | null>(null)
 
   const defaultLayoutPluginInstance = defaultLayoutPlugin()
 
@@ -98,7 +98,27 @@ const MainLayout = () => {
     }
   }
 
-  const handleDeleteProject = (projectId) => {
+  interface Document {
+    id: number
+    name: string
+    content: string
+    filePath: string
+  }
+
+  interface Message {
+    id: number
+    text: string
+    sender: "ai" | "user"
+  }
+
+  interface Project {
+    id: number
+    name: string
+    documents: Document[]
+    messages: Message[]
+  }
+
+  const handleDeleteProject = (projectId: number) => {
     if (window.confirm("Are you sure you want to delete this project?")) {
       setProjects(projects.filter((p) => p.id !== projectId))
       setProjectsData((prev) => {
@@ -113,17 +133,21 @@ const MainLayout = () => {
     }
   }
 
-  const handleFileUpload = (event) => {
+  interface FileUploadEvent extends React.ChangeEvent<HTMLInputElement> {
+    target: HTMLInputElement & EventTarget & { files: FileList }
+  }
+
+  const handleFileUpload = (event: FileUploadEvent) => {
     const file = event.target.files[0]
     if (file && selectedProject) {
-      const newDocument = {
+      const newDocument: Document = {
         id: Math.max(...documents.map((d) => d.id), 0) + 1,
         name: file.name,
         content: `Preview content for ${file.name}`,
-        filePath: `files/${file.name}`, // Add this line
+        filePath: `files/${file.name}`,
       }
 
-      const updatedDocuments = [...documents, newDocument]
+      const updatedDocuments: Document[] = [...documents, newDocument]
       setDocuments(updatedDocuments)
       setProjectsData((prev) => ({
         ...prev,
@@ -135,7 +159,14 @@ const MainLayout = () => {
     }
   }
 
-  const handleDeleteDocument = (docId) => {
+  interface Document {
+    id: number
+    name: string
+    content: string
+    filePath: string
+  }
+
+  const handleDeleteDocument = (docId: number) => {
     if (window.confirm("Are you sure you want to delete this document?")) {
       const updatedDocuments = documents.filter((d) => d.id !== docId)
       setDocuments(updatedDocuments)
@@ -195,35 +226,33 @@ const MainLayout = () => {
     }
   }
 
-  const handleDocumentClick = async (document) => {
+  const handleDocumentClick = async (document: Document) => {
     setSelectedDocument(document)
     setShowPreview(true)
-
+  
     const content = document.content
-    const type = document.name.split(".").pop().toLowerCase()
-
+    const type = document.name.split(".").pop()?.toLowerCase() || ""
+  
     if (type === "pdf") {
       setPreviewType("pdf")
       setPreviewContent(document.filePath)
     } else if (type === "txt") {
       setPreviewType("txt")
       setPreviewContent(content)
+    } else if (type === "md") {
+      setPreviewType("md")
+      setPreviewContent(content)
     } else if (type === "doc" || type === "docx") {
       setPreviewType("doc")
       try {
-        // Simulate a minimal DOCX file structure
         const minimalDocx = new ArrayBuffer(100)
         const view = new Uint8Array(minimalDocx)
-        // Set some bytes to simulate a ZIP structure (which DOCX uses)
         view[0] = 0x50 // 'P'
         view[1] = 0x4b // 'K'
         view[2] = 0x03 // '\x03'
         view[3] = 0x04 // '\x04'
-
-        // Use mammoth to convert our simulated DOCX to HTML
+  
         const result = await mammoth.convertToHtml({ arrayBuffer: minimalDocx })
-
-        // Append our original content to the result
         setPreviewContent(result.value + "<p>" + content + "</p>")
       } catch (error) {
         console.error("Error converting DOC file:", error)
