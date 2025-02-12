@@ -35,8 +35,8 @@ const MainLayout = () => {
 
   useEffect(() => {
     if (selectedProject) {
-      setDocuments(selectedProject.Documents);
-      setMessages(selectedProject.Messages);
+      setDocuments(selectedProject.Documents || []);
+      setMessages(selectedProject.Messages || []);
     } else {
       setDocuments([]);
       setMessages([]);
@@ -279,7 +279,7 @@ const MainLayout = () => {
           )}
         </div>
         <div className="space-y-2">
-          {documents.map((document) => (
+          {documents && documents.map((document) => (
             <div
               key={document.id}
               className={`flex justify-between items-center p-2 rounded cursor-pointer ${

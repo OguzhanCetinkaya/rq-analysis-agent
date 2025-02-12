@@ -8,8 +8,12 @@ const sequelize = new Sequelize({
 const Project = sequelize.define('Project', {
   name: {
     type: DataTypes.STRING,
-    allowNull: false
-  }
+    allowNull: false,
+  },
+  threadId: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
 });
 
 const Document = sequelize.define('Document', {

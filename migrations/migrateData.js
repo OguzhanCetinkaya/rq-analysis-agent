@@ -1,5 +1,5 @@
 // filepath: /Users/oguzhancetinkaya/Code/rq-analysis-agent/rq-analysis-agent/migrateData.js
-const { sequelize, Project, Document, Message } = require('./database');
+const { sequelize, Project, Document, Message } = require('../database');
 
 const projectsData = {
   1: {
