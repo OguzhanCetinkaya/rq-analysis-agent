@@ -1,0 +1,8 @@
+## Security Requirements
+- HTTPS encryption for all communications
+- Password hashing using bcrypt
+- JWT token-based authentication
+- Input validation and sanitization
+- XSS and CSRF protection
+- Rate limiting for API endpoints
+- Regular security audits and penetration testing

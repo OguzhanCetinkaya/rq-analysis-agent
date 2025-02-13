@@ -1,7 +1,6 @@
+import { openai, assistantId } from "@/app/openai";
 import formidable from 'formidable';
 import fs from 'fs';
-import { Document } from '../../database';
-import { openai, assistantId } from "@/app/openai";
 
 const getOrCreateVectorStore = async () => {
   const assistant = await openai.beta.assistants.retrieve(assistantId);
@@ -24,15 +23,10 @@ const getOrCreateVectorStore = async () => {
   return vectorStore.id;
 };
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
-
-const uploadHandler = async (req, res) => {
+// upload file to assistant's vector store
+const handler = async (req, res) => {
   if (req.method === 'POST') {
-    //const form = formidable({ multiples: false, uploadDir: path.join(process.cwd(), 'public/files'), keepExtensions: true });
+
     const form = formidable({ multiples: false, uploadDir: `${process.cwd()}/public/files`, keepExtensions: true });
 
     form.parse(req, async (err, fields, files) => {
@@ -40,29 +34,17 @@ const uploadHandler = async (req, res) => {
         return res.status(500).json({ error: 'File upload error' });
       }
 
-      const { projectId } = fields;
       const file = files.file[0];
 
       if (!file) {
         return res.status(400).json({ error: 'No file uploaded' });
       }
 
-      const newFilePath = form.uploadDir +'/'+ file.newFilename;
-
-      fs.renameSync(file.filepath, newFilePath);
-
-      const newDocument = await Document.create({
-        name: file.originalFilename,
-        filePath: `files/${file.newFilename}`,
-        content: '',
-        ProjectId: projectId,
-      });
-
       const vectorStoreId = await getOrCreateVectorStore(); // get or create vector store
 
       // upload using the file stream
       const openaiFile = await openai.files.create({
-        file: fs.createReadStream(newFilePath),
+        file: fs.createReadStream(file.path),
         purpose: "assistants",
       });
 
@@ -71,11 +53,40 @@ const uploadHandler = async (req, res) => {
         file_id: openaiFile.id,
       });
 
-      res.status(200).json(newDocument);
+      res.status(200).json();
     });
-  } else {
-    res.status(405).json({ error: 'Method not allowed' });
   }
-};
+  // list files in assistant's vector store
+  else if (req.method === 'GET') {
+    const vectorStoreId = await getOrCreateVectorStore(); // get or create vector store
+    const fileList = await openai.beta.vectorStores.files.list(vectorStoreId);
+  
+    const filesArray = await Promise.all(
+      fileList.data.map(async (file) => {
+        const fileDetails = await openai.files.retrieve(file.id);
+        const vectorFileDetails = await openai.beta.vectorStores.files.retrieve(
+          vectorStoreId,
+          file.id
+        );
+        return {
+          file_id: file.id,
+          filename: fileDetails.filename,
+          status: vectorFileDetails.status,
+        };
+      })
+    );
+    res.status(200).json(filesArray);
+  }
+  // delete file from assistant's vector store
+  else if (req.method === 'DELETE'){
+    const body = await req.json();
+    const fileId = body.fileId;
+  
+    const vectorStoreId = await getOrCreateVectorStore(); // get or create vector store
+    await openai.beta.vectorStores.files.del(vectorStoreId, fileId); // delete file from vector store
+  
+    return res.status(200).json();
+  }
+}
 
-export default uploadHandler;
+export default handler;
