@@ -313,7 +313,7 @@ const MainLayout = () => {
                   message.sender === "user" ? "ml-auto bg-blue-500 text-white" : "bg-gray-100"
                 }`}
               >
-                <div>{message.text}</div>
+                <div dangerouslySetInnerHTML={{ __html: marked(message.text) }} />
                 <button
                   onClick={() => handleDeleteMessage(message.id)}
                   className="ml-2 text-red-500 hover:text-red-700"
