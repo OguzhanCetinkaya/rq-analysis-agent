@@ -309,16 +309,16 @@ const MainLayout = () => {
             messages.map((message) => (
               <div
                 key={message.id}
-                className={`mb-4 p-3 rounded-lg max-w-3xl ${
+                className={`mb-4 p-3 rounded-lg max-w-3xl flex justify-between items-center ${
                   message.sender === "user" ? "ml-auto bg-blue-500 text-white" : "bg-gray-100"
                 }`}
               >
-                {message.text}
+                <div>{message.text}</div>
                 <button
                   onClick={() => handleDeleteMessage(message.id)}
                   className="ml-2 text-red-500 hover:text-red-700"
                 >
-                  Delete
+                  <Trash2 size={16} />
                 </button>
               </div>
             ))
