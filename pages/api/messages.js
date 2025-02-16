@@ -25,7 +25,8 @@ const handler = async (req, res) => {
       const response = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: messages,
-        store: true
+        temperature:0.5,
+        max_completion_tokens:124,
       });
 
       const aiMessage = {
