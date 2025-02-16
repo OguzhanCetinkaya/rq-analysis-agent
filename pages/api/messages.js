@@ -13,7 +13,6 @@ const handler = async (req, res) => {
     // save user message to database
     try {
       const newMessage = await Message.create({ text, sender, ProjectId });
-      res.status(200).json(newMessage);
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Failed to save message' });
@@ -39,8 +38,8 @@ const handler = async (req, res) => {
       // save assistant message to database
       try {
         const newMessage = await Message.create(aiMessage);
-        messages.push(aiMessage);
-        res.status(200).json(messages);
+        const updatedMessages = await get_messages(ProjectId);
+        res.status(200).json(updatedMessages);
       } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to save message' });
