@@ -5,7 +5,6 @@ import OpenAI from "openai";
 import { wrapOpenAI } from "langsmith/wrappers";
 const openai = wrapOpenAI(new OpenAI({apiKey: process.env.OPENAI_API_KEY}));
 
-
 const handler = async (req, res) => {
   if (req.method === 'POST') {
     const { text, sender, ProjectId } = req.body;
@@ -50,6 +49,16 @@ const handler = async (req, res) => {
       res.status(500).json({ error: 'Failed to get AI response' });
     }
 
+  } else if (req.method === 'DELETE') {
+    const { id } = req.query;
+
+    try {
+      await Message.destroy({ where: { id } });
+      res.status(204).end();
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Failed to delete message' });
+    }
   } else {
     res.status(405).json({ error: 'Method not allowed' });
   }
@@ -103,7 +112,6 @@ const prepare_messages = async (projectId) => {
     });
   }
 
-
   return openai_messages;
 }
 
@@ -143,7 +151,6 @@ const get_document_content = async (documentId) => {
   const filepath = `${process.cwd()}/public/${document.filePath}`;
   
   let content = '';
-
 
   if (filepath.endsWith('.pdf')) {
     content = await extract_pdf_text(filepath);

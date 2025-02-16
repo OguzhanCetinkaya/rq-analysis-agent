@@ -144,6 +144,23 @@ const MainLayout = () => {
     }
   };
 
+  const handleDeleteMessage = async (messageId) => {
+    if (window.confirm("Are you sure you want to delete this message?")) {
+      const response = await fetch(`/api/messages?id=${messageId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+  
+      if (response.ok) {
+        setMessages(messages.filter((message) => message.id !== messageId));
+      } else {
+        console.error('Failed to delete message');
+      }
+    }
+  };
+
   const handleDocumentClick = async (document) => {
     setSelectedDocument(document);
     setShowPreview(true);
@@ -297,6 +314,12 @@ const MainLayout = () => {
                 }`}
               >
                 {message.text}
+                <button
+                  onClick={() => handleDeleteMessage(message.id)}
+                  className="ml-2 text-red-500 hover:text-red-700"
+                >
+                  Delete
+                </button>
               </div>
             ))
           ) : (
