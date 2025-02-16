@@ -8,8 +8,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       res.status(200).json(projects);
       break;
     case 'POST':
-      const { name, threadId } = req.body;
-      const newProject = await Project.create({ name, threadId });
+      const { name } = req.body;
+      const newProject = await Project.create({ name });
       res.status(201).json(newProject);
       break;
     case 'DELETE':

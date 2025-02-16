@@ -9,11 +9,7 @@ const Project = sequelize.define('Project', {
   name: {
     type: DataTypes.STRING,
     allowNull: false,
-  },
-  threadId: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
+  }
 });
 
 const Document = sequelize.define('Document', {
