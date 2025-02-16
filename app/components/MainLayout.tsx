@@ -46,29 +46,12 @@ const MainLayout = () => {
   const handleNewProject = async () => {
     const projectName = prompt("Enter project name:");
     if (projectName) {
-
-      const openai_response = await fetch('/api/assistants/threads', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-  
-      if (!openai_response.ok) {
-        console.error('Failed to get OpenAI Create Thread response');
-        return;
-      }
-  
-      const openai_response_json = await openai_response.json();
-      const threadId = openai_response_json.threadId;
-      console.log("threadId: ", threadId);
-
       const response = await fetch('/api/projects', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name: projectName, threadId: threadId }),
+        body: JSON.stringify({ name: projectName }),
       });
       const newProject = await response.json();
       setProjects((prev) => [...prev, newProject]);
