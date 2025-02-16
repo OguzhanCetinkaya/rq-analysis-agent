@@ -120,6 +120,8 @@ const MainLayout = () => {
         sender: "user",
         ProjectId: selectedProject.id,
       };
+
+      setIsAiProcessing(true);
   
       // Save the user message to the database
       const response = await fetch('/api/messages', {
@@ -132,54 +134,13 @@ const MainLayout = () => {
   
       if (!response.ok) {
         console.error('Failed to save user message');
+        setIsAiProcessing(false);
         return;
       }
   
-      const savedUserMessage = await response.json();
-  
-      const updatedMessages = [...messages, savedUserMessage];
-      setMessages(updatedMessages);
+      const messages = await response.json();
+      setMessages(messages);
       setNewMessage("");
-  
-      setIsAiProcessing(true);
-  
-      // Send the conversation to OpenAI API
-      const aiResponse = await fetch('/api/openai', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ messages: updatedMessages }),
-      });
-  
-      if (!aiResponse.ok) {
-        console.error('Failed to get AI response');
-        setIsAiProcessing(false);
-        return;
-      }
-  
-      const aiMessage = await aiResponse.json();
-  
-      // Save the AI message to the database
-      const savedAiMessageResponse = await fetch('/api/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(aiMessage),
-      });
-  
-      if (!savedAiMessageResponse.ok) {
-        console.error('Failed to save AI message');
-        setIsAiProcessing(false);
-        return;
-      }
-  
-      const savedAiMessage = await savedAiMessageResponse.json();
-  
-      const finalMessages = [...updatedMessages, savedAiMessage];
-      setMessages(finalMessages);
-      setIsAiProcessing(false);
     }
   };
 
