@@ -103,13 +103,13 @@ const MainLayout = () => {
       formData.append('projectId', selectedProject.id);
   
       // Upload the file to the server
-      const response = await fetch('/api/upload', {
+      const uploadResponse = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
       });
   
-      if (response.ok) {
-        const newDocument = await response.json();
+      if (uploadResponse.ok) {
+        const newDocument = await uploadResponse.json();
         setDocuments((prev) => [...prev, newDocument]);
   
         // Add a new message to the database
@@ -119,13 +119,20 @@ const MainLayout = () => {
           ProjectId: selectedProject.id,
         };
   
-        await fetch('/api/messages', {
+        const messageResponse = await fetch('/api/messages', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(newMessage),
         });
+  
+        if (messageResponse.ok) {
+          const messages = await messageResponse.json();
+          setMessages(messages);
+        } else {
+          console.error('Failed to save message');
+        }
       } else {
         console.error('File upload failed');
       }
@@ -159,13 +166,20 @@ const MainLayout = () => {
           ProjectId: selectedProject.id,
         };
   
-        await fetch('/api/messages', {
+        const messageResponse = await fetch('/api/messages', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(newMessage),
         });
+
+        if (messageResponse.ok) {
+          const messages = await messageResponse.json();
+          setMessages(messages);
+        } else {
+          console.error('Failed to save message');
+        }
       } else {
         console.error('Failed to delete document');
       }

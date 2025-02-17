@@ -21,42 +21,47 @@ const handler = async (req, res) => {
     // prepare messages
     const messages = await prepare_messages(ProjectId);
     
-    // send to openai
-    try {
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: messages,
-        temperature:0.5,
-        max_completion_tokens:124,
-      });
+    if (sender != "developer")
+    {
+        // send to openai
+        try {
+          const response = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: messages,
+            temperature:0.5,
+            max_completion_tokens:124,
+          });
 
-      const aiMessage = {
-        text: response.choices[0].message.content,
-        sender: 'assistant',
-        ProjectId,
-      };
+          const aiMessage = {
+            text: response.choices[0].message.content,
+            sender: 'assistant',
+            ProjectId,
+          };
 
-      // save assistant message to database
-      try {
-        const newMessage = await Message.create(aiMessage);
-        const updatedMessages = await get_messages(ProjectId);
-        res.status(200).json(updatedMessages);
-      } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Failed to save message' });
-      }
+          // save assistant message to database
+          try {
+            const newMessage = await Message.create(aiMessage);
+          } catch (error) {
+            console.error(error);
+            res.status(500).json({ error: 'Failed to save message' });
+          }
 
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'Failed to get AI response' });
+        } catch (error) {
+          console.error(error);
+          res.status(500).json({ error: 'Failed to get AI response' });
+        }
     }
+
+    const updatedMessages = await get_messages(ProjectId);
+    res.status(200).json(updatedMessages);
 
   } else if (req.method === 'DELETE') {
     const { id } = req.query;
 
     try {
       await Message.destroy({ where: { id } });
-      res.status(204).end();
+      const updatedMessages = await get_messages(ProjectId);
+      res.status(200).json(updatedMessages);
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Failed to delete message' });
