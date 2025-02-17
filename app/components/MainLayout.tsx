@@ -36,11 +36,11 @@ const MainLayout = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [isAiProcessing, setIsAiProcessing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [previewContent, setPreviewContent] = useState(null);
-  const [previewType, setPreviewType] = useState(null);
+  const [previewContent, setPreviewContent] = useState<string | null>(null);
+  const [previewType, setPreviewType] = useState<"pdf" | "txt" | "md" | "doc" | "unsupported" | null>(null);
 
   const defaultLayoutPluginInstance = defaultLayoutPlugin();
 
@@ -256,7 +256,7 @@ const MainLayout = () => {
     }
   };
 
-  const handleDocumentClick = async (document) => {
+  const handleDocumentClick = async (document: Document) => {
     setSelectedDocument(document);
     setShowPreview(true);
 
