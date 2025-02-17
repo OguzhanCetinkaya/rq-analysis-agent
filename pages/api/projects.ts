@@ -4,7 +4,16 @@ import { Project, Document, Message } from '../../database';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   switch (req.method) {
     case 'GET':
-      const projects = await Project.findAll({ include: [Document, Message] });
+      const projects = await Project.findAll({
+        include: [
+          Document,
+          {
+            model: Message,
+            separate: true, // Perform a separate query for messages
+            order: [['createdAt', 'ASC']] // Sort messages by creation date
+          }
+        ]
+      });
       res.status(200).json(projects);
       break;
     case 'POST':

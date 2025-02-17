@@ -120,7 +120,8 @@ const get_messages = async (projectId) => {
   const messages = await Message.findAll({
     where: {
       ProjectId: projectId
-    }
+    },
+    order: [['createdAt', 'ASC']]
   });
 
   return messages;
