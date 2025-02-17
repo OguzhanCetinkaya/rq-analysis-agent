@@ -8,7 +8,7 @@ const Header: React.FC = () => {
   const pathname = usePathname()
 
   return (
-    <header className="w-full bg-blue-500 p-4">
+    <header className="w-full p-4">
       <nav>
         <ul className="flex justify-center space-x-4">
           <li>

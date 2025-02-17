@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Upload, Send, Trash2, X, Loader, FileText, File } from "lucide-react";
+import { Plus, FileUp, Send, Trash2, X, Loader, FileText, File } from "lucide-react";
 import { Viewer, Worker } from "@react-pdf-viewer/core";
 import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
 import mammoth from "mammoth";
@@ -319,7 +319,7 @@ const MainLayout = () => {
       <div className="w-64 bg-white border-r border-gray-200 p-4">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">Projects</h2>
-          <button onClick={handleNewProject} className="p-2 hover:bg-gray-100 rounded-full">
+          <button onClick={handleNewProject} className="p-2 hover:bg-blue-100 rounded-full">
             <Plus size={20} />
           </button>
         </div>
@@ -348,8 +348,8 @@ const MainLayout = () => {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">Documents</h2>
           {selectedProject && (
-            <label className="p-2 hover:bg-gray-100 rounded-full cursor-pointer">
-              <Upload size={20} />
+            <label className="p-2 hover:bg-blue-100 rounded-full cursor-pointer">
+              <FileUp size={20} />
               <input type="file" className="hidden" onChange={handleFileUpload} accept=".pdf,.doc,.docx,.txt" />
             </label>
           )}
@@ -400,6 +400,9 @@ const MainLayout = () => {
 
         {/* Chat Area */}
         <div className="flex-1 p-4 overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold">Chat History</h2>
+        </div>
           {selectedProject ? (
             messages.map((message) => {
               // Determine background color based on sender
@@ -417,7 +420,7 @@ const MainLayout = () => {
               return (
                 <div
                   key={message.id}
-                  className={`mb-4 p-3 rounded-lg max-w-3xl flex justify-between items-center ${
+                  className={`mb-3 p-2 rounded-lg max-w-3xl flex justify-between items-center chat-message ${
                     message.sender === "assistant" ? "" : "ml-auto"
                   } ${getBackgroundColor()}`}
                 >

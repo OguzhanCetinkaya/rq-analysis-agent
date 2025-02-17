@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Nunito', sans-serif;
 }
 
 @layer utilities {
@@ -75,4 +75,12 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.chat-message {
+  font-size: 0.875rem; /* This sets the font size to 14px */
+}
+
+.header {
+  background-color: #202124;
 }
