@@ -141,6 +141,7 @@ const MainLayout = () => {
       const messages = await response.json();
       setMessages(messages);
       setNewMessage("");
+      setIsAiProcessing(false);
     }
   };
 
