@@ -30,10 +30,12 @@ export default function RootLayout({
         <link rel="stylesheet" href="https://unpkg.com/react-pdf@5.7.2/dist/esm/Page/AnnotationLayer.css" />
       </head>
       <body className={`${inter.className} ${roboto.className} ${openSans.className} ${lato.className} ${montserrat.className} ${nunito.className}`}>
-        <DynamicHeader />
-        <main className="mainContent">
-          {children}
-        </main>
+        <div className="h-screen flex flex-col">
+          <DynamicHeader />
+          <div className="flex-1 overflow-hidden">
+            {children}
+          </div>
+        </div>
       </body>
     </html>
   )

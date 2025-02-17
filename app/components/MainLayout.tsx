@@ -314,9 +314,9 @@ const MainLayout = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="h-full flex bg-gray-100">
       {/* Left Pane - Projects */}
-      <div className="w-64 bg-white border-r border-gray-200 p-4">
+      <div className="w-64 p-4 bg-white border-r border-gray-200 overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">Projects</h2>
           <button onClick={handleNewProject} className="p-2 hover:bg-blue-100 rounded-full">
@@ -344,7 +344,7 @@ const MainLayout = () => {
       </div>
 
       {/* Middle Pane - Documents */}
-      <div className="w-72 bg-white border-r border-gray-200 p-4">
+      <div className="w-72 p-4 bg-white border-r border-gray-200 overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">Documents</h2>
           {selectedProject && (
@@ -382,7 +382,7 @@ const MainLayout = () => {
       </div>
 
       {/* Right Pane - Chat and Preview */}
-      <div className="flex-1 flex flex-col bg-white">
+      <div className="flex-1 flex flex-col bg-white overflow-hidden">
         {/* Document Preview Modal */}
         {showPreview && selectedDocument && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
@@ -400,9 +400,9 @@ const MainLayout = () => {
 
         {/* Chat Area */}
         <div className="flex-1 p-4 overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">Chat History</h2>
-        </div>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold">Chat History</h2>
+          </div>
           {selectedProject ? (
             messages.map((message) => {
               // Determine background color based on sender
@@ -445,7 +445,7 @@ const MainLayout = () => {
         </div>
 
         {/* Message Input */}
-        <div className="border-t border-gray-200 p-4">
+        <div className="border-t border-gray-200 p-4 bg-white">
           <div className="flex space-x-2">
             <input
               type="text"

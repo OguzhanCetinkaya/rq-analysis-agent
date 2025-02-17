@@ -77,13 +77,24 @@ body {
   }
 }
 
+/* Remove these styles if they exist */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Update the header styles */
+.header {
+  background-color: #202124;
+}
 .chat-message {
   font-size: 0.875rem; /* This sets the font size to 14px */
 }
 
-.header {
-  background-color: #202124;
-  padding: 1rem;
+.mainContent {
+  flex: 1;
+  overflow-y: auto; /* Allow the main content to scroll if it overflows */
 }
 
 .header .logo {

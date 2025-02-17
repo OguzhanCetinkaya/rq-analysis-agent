@@ -8,7 +8,7 @@ const Header: React.FC = () => {
   const pathname = usePathname()
 
   return (
-    <header className="header w-full p-4">
+    <header className="flex-none bg-[#202124]">
       <div className="flex items-center p-4">
         <div className="flex items-center">
           <i className="fas fa-robot text-2xl text-white mr-2"></i>
