@@ -366,24 +366,43 @@ const MainLayout = () => {
         {/* Chat Area */}
         <div className="flex-1 p-4 overflow-y-auto">
           {selectedProject ? (
-            messages.map((message) => (
-              <div
-                key={message.id}
-                className={`mb-4 p-3 rounded-lg max-w-3xl flex justify-between items-center ${
-                  message.sender === "user" ? "ml-auto bg-blue-500 text-white" : "bg-gray-100"
-                }`}
-              >
-                <div dangerouslySetInnerHTML={{ __html: marked(message.text) }} />
-                <button
-                  onClick={() => handleDeleteMessage(message.id)}
-                  className="ml-2 text-red-500 hover:text-red-700"
+            messages.map((message) => {
+              // Determine background color based on sender
+              const getBackgroundColor = () => {
+                switch (message.sender) {
+                  case "user":
+                    return "bg-blue-500 text-white";
+                  case "developer":
+                    return "bg-[#D2292D] text-white";
+                  default: // assistant
+                    return "bg-gray-100";
+                }
+              };
+
+              return (
+                <div
+                  key={message.id}
+                  className={`mb-4 p-3 rounded-lg max-w-3xl flex justify-between items-center ${
+                    message.sender === "assistant" ? "" : "ml-auto"
+                  } ${getBackgroundColor()}`}
                 >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            ))
+                  <div dangerouslySetInnerHTML={{ __html: marked(message.text) }} />
+                  {/* Only show delete button for non-developer messages */}
+                  {message.sender !== "developer" && (
+                    <button
+                      onClick={() => handleDeleteMessage(message.id)}
+                      className="ml-2 text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
+              );
+            })
           ) : (
-            <div className="text-center text-gray-500 mt-8">Select a project to start the conversation</div>
+            <div className="text-center text-gray-500 mt-8">
+              Select a project to start the conversation
+            </div>
           )}
         </div>
 
