@@ -8,32 +8,13 @@ const Header: React.FC = () => {
   const pathname = usePathname()
 
   return (
-    <header className="w-full p-4">
-      <nav>
-        <ul className="flex justify-center space-x-4">
-          <li>
-            <Link href="/" className={`text-white hover:text-gray-200 ${pathname === "/" ? "underline" : ""}`}>
-              Home
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/about"
-              className={`text-white hover:text-gray-200 ${pathname === "/about" ? "underline" : ""}`}
-            >
-              About
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/dashboard"
-              className={`text-white hover:text-gray-200 ${pathname === "/dashboard" ? "underline" : ""}`}
-            >
-              Dashboard
-            </Link>
-          </li>
-        </ul>
-      </nav>
+    <header className="header w-full p-4">
+      <div className="flex items-center p-4">
+        <div className="flex items-center">
+          <i className="fas fa-robot text-2xl text-white mr-2"></i>
+          <span className="text-xl text-white font-semibold">System Analyst Agent</span>
+        </div>
+      </div>
     </header>
   )
 }

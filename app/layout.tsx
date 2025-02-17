@@ -26,12 +26,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
         <link rel="stylesheet" href="https://unpkg.com/react-pdf@5.7.2/dist/esm/Page/AnnotationLayer.css" />
       </head>
       <body className={`${inter.className} ${roboto.className} ${openSans.className} ${lato.className} ${montserrat.className} ${nunito.className}`}>
-        <header className="header">
-          <DynamicHeader />
-        </header>
+        <DynamicHeader />
         <main className="mainContent">
           {children}
         </main>
