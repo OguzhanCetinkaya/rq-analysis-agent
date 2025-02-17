@@ -1,5 +1,6 @@
 import { Message, Project, Document } from '../../database';
 import fs from 'fs';
+import pdfParse from 'pdf-parse';
 
 import OpenAI from "openai";
 import { wrapOpenAI } from "langsmith/wrappers";

@@ -61,16 +61,34 @@ const MainLayout = () => {
 
   const handleDeleteProject = async (projectId) => {
     if (window.confirm("Are you sure you want to delete this project?")) {
-      await fetch('/api/projects', {
+      // Delete all documents associated with the project
+      const projectDocuments = documents.filter((doc) => doc.ProjectId === projectId);
+      for (const doc of projectDocuments) {
+        await fetch('/api/documents', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ id: doc.id }),
+        });
+      }
+  
+      // Delete the project
+      const response = await fetch('/api/projects', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ id: projectId }),
       });
-      setProjects(projects.filter((p) => p.id !== projectId));
-      if (selectedProject?.id === projectId) {
-        setSelectedProject(null);
+  
+      if (response.ok) {
+        setProjects(projects.filter((p) => p.id !== projectId));
+        if (selectedProject?.id === projectId) {
+          setSelectedProject(null);
+        }
+      } else {
+        console.error('Failed to delete project');
       }
     }
   };
@@ -105,10 +123,22 @@ const MainLayout = () => {
 
   const handleDeleteDocument = async (docId) => {
     if (window.confirm("Are you sure you want to delete this document?")) {
-      setDocuments(documents.filter((d) => d.id !== docId));
-      if (selectedDocument?.id === docId) {
-        setSelectedDocument(null);
-        setShowPreview(false);
+      const response = await fetch('/api/documents', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: docId }),
+      });
+  
+      if (response.ok) {
+        setDocuments(documents.filter((d) => d.id !== docId));
+        if (selectedDocument?.id === docId) {
+          setSelectedDocument(null);
+          setShowPreview(false);
+        }
+      } else {
+        console.error('Failed to delete document');
       }
     }
   };
