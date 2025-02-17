@@ -232,20 +232,23 @@ const MainLayout = () => {
         return;
       }
   
-      const messages = await response.json();
+      const {messages, documents} = await response.json();
+      
       setMessages(messages);
+      setDocuments(documents);
       setNewMessage("");
       setIsAiProcessing(false);
     }
   };
 
-  const handleDeleteMessage = async (messageId: string) => {
+  const handleDeleteMessage = async (messageId: string, projectId: string) => {
     if (window.confirm("Are you sure you want to delete this message?")) {
       const response = await fetch(`/api/messages?id=${messageId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-        }
+        },
+        body: JSON.stringify({ projectId }),
       });
   
       if (response.ok) {
@@ -428,7 +431,7 @@ const MainLayout = () => {
                   {/* Only show delete button for non-developer messages */}
                   {message.sender !== "developer" && (
                     <button
-                      onClick={() => handleDeleteMessage(message.id)}
+                      onClick={() => handleDeleteMessage(message.id, selectedProject.id)}
                       className="ml-2 text-red-500 hover:text-red-700"
                     >
                       <Trash2 size={16} />

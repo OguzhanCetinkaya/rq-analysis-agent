@@ -28,24 +28,44 @@ const handler = async (req, res) => {
           const response = await openai.chat.completions.create({
             model: "gpt-4o-mini",
             messages: messages,
-            temperature:0.5,
-            max_completion_tokens:124,
+            temperature:0.7,
+            tools: tools, // Include the tool definition
+            tool_choice: "auto", // Allows GPT-4o to decide when to call the tool
+            max_completion_tokens:8000,
           });
 
-          const aiMessage = {
-            text: response.choices[0].message.content,
-            sender: 'assistant',
-            ProjectId,
-          };
+          const assistantMessage = response.choices[0].message;
+          if (assistantMessage.tool_calls) {
+            for (const toolCall of assistantMessage.tool_calls) {
+              if (toolCall.function.name === "create_document") {
+                const args = JSON.parse(toolCall.function.arguments);
+                console.log("GPT-4o requested to create a document with:", args);
+      
+                // Call the actual function to create a document
+                createDocument(args.filename, args.title, args.content, ProjectId);
 
-          // save assistant message to database
-          try {
-            const newMessage = await Message.create(aiMessage);
-          } catch (error) {
-            console.error(error);
-            res.status(500).json({ error: 'Failed to save message' });
+                const aiMessage = {
+                  text: `The document "${args.filename}.md" has been created.`,
+                  sender: 'assistant',
+                  ProjectId,
+                };
+                await Message.create(aiMessage);
+                const toolMessage = {
+                  text: "I have created a document with the specified content.",
+                  sender: 'developer',
+                  ProjectId,
+                };
+                await Message.create(toolMessage);
+              }
+            }
+          } else {
+            const aiMessage = {
+              text: response.choices[0].message.content,
+              sender: 'assistant',
+              ProjectId,
+            };
+            await Message.create(aiMessage);
           }
-
         } catch (error) {
           console.error(error);
           res.status(500).json({ error: 'Failed to get AI response' });
@@ -53,14 +73,16 @@ const handler = async (req, res) => {
     }
 
     const updatedMessages = await get_messages(ProjectId);
-    res.status(200).json(updatedMessages);
+    const updatedDocuments = await get_documents(ProjectId);
+    res.status(200).json(updatedMessages, updatedDocuments);
 
   } else if (req.method === 'DELETE') {
     const { id } = req.query;
+    const { projectId } = req.body;
 
     try {
       await Message.destroy({ where: { id } });
-      const updatedMessages = await get_messages(ProjectId);
+      const updatedMessages = await get_messages(projectId);
       res.status(200).json(updatedMessages);
     } catch (error) {
       console.error(error);
@@ -74,29 +96,45 @@ const handler = async (req, res) => {
 const prepare_messages = async (projectId) => {
   const documents_content = await get_project_documents_content(projectId);
   const system_instructions = `
-    You are an AI Requirements Gathering Assistant. Your primary goal is to guide the user through the process of defining and clarifying requirements for a project or system. You will:
+You are an AI System Analyst assisting a human system analyst in creating requirement analysis documents. Your primary responsibilities include analyzing project documents, detecting gaps or contradictions, proactively asking clarifying questions, and generating structured documents upon request.
 
-    1. Welcome and interact with users in a friendly, professional manner.
-    2. Ask clarifying questions to gather complete requirements.
-    3. Prompt users to upload relevant documents.
-    4. Parse the contents of any uploaded files, and incorporate key insights into the requirement analysis.
-    5. Maintain a working “draft” of the requirements analysis document as the conversation progresses.
-    6. Keep track of any changes, updates, or newly provided data (whether via conversation or uploaded documents).
-    7. Once a user has confirmed you have captured everything, finalize the requirements analysis document and produce a new version.
+# Document Handling
+- You will process and incorporate text, markdown, and PDF documents into your context in the order they are uploaded.
+- When a document is deleted, its content will be removed from your context.
+- You will treat all uploaded documents equally, without distinguishing between types.
+- You will silently incorporate changes when new documents are uploaded.
 
-    **Behavior Requirements**:
-    - Always ensure all required information is captured—ask specific follow-up questions if details are missing or unclear.
-    - Confirm with the user before creating or finalizing a new version of the analysis document.
-    - If the user uploads new files or provides new details, update your draft and ask if any additional context is needed.
-    - Produce a well-organized Requirements Analysis Document once the user explicitly confirms everything is ready.
-    - Maintain a version history so that each finalized document is stored separately from previous drafts.
+# Conversational Guidelines
+- You will proactively ask questions when detecting gaps, inconsistencies, or missing details in the provided documents or conversation.
+- You will only ask one short, clear, and concise question at a time.
+- You will wait for a response before asking the next question.
+- If the response is vague, you will ask for more details.
+- You will provide one concise suggestion after the human analyst answers a question or sends a message.
+- You will inform the human analyst that you can summarize key points but only do so when explicitly requested.
+- You will not categorize or tag questions and suggestions.
+- You will not provide citations or references to document sections.
+- You will not adapt your questioning style dynamically; you will maintain a consistent approach.
+- You will not detect or adjust to conversation loops.
 
-    **Important**:
-    - Only finalize (i.e., output) the Requirements Analysis Document after the user confirms all details are collected.
-    - You have access to certain specialized tools that help with storing, retrieving, and summarizing uploaded files; see below.
-    - If the user’s request is outside the scope of gathering or clarifying requirements, respond politely or refuse if it violates any policy.
-  
-    ${documents_content}
+# Conflict Resolution
+- If you detect contradictions or conflicts in the provided documents or conversation, you will state the issue and ask for clarification.
+- If an uploaded document introduces ambiguity or incompleteness, you will ask the analyst about these gaps.
+
+# Document Creation
+- You will have access to a tool for document creation with the following parameters: title and content.
+- You will generate documents only when explicitly asked to do so by the human analyst.
+- The generated document will be based on your context and conversation history.
+- The human analyst will review and may request changes to the generated document.
+
+# Interaction Format
+- You will interact with the human analyst through a text-based chat.
+- When the conversation starts, you will immediately analyze the available documents and conversation context and ask a specific project-related question instead of a broad question.
+- You will not ask broad or generic questions like "What do you need help with?" Instead, you will directly engage with project-specific details.
+- You will not log interactions or store past conversations beyond the current session.
+
+# Available Documents
+Here you can find the available documents below:
+${documents_content}
   `
   const system_message = {
     role: "system",
@@ -133,15 +171,28 @@ const get_messages = async (projectId) => {
   return messages;
 }
 
+const get_documents = async (projectId) => {
+  const documents = await Document.findAll({
+    where: {
+      ProjectId: projectId
+    }
+  });
+
+  return documents;
+}
+
 const get_project_documents_content = async (projectId) => {
   const documents = await get_project_documents(projectId);
+  if (!documents.length) {
+    return 'No documents uploaded yet.';
+  }
   const contentPromises = documents.map((document) => get_document_content(document.id));
   const contents = await Promise.all(contentPromises);
 
   let content_text = "Here are the documents in this project:\n\n";
   for (let i = 0; i < documents.length; i++) {
-    content_text += `${i + 1}. ${documents[i].name}\n`;
-    content_text += contents[i] + '\n\n';
+    content_text += `${i + 1}. Document Name: ${documents[i].name}\n`;
+    content_text += 'Content:\n' + contents[i] + '\n\n';
   }
   return content_text;
 }
@@ -174,5 +225,47 @@ const extract_pdf_text = async (filepath) => {
   const data = await pdfParse(dataBuffer);
   return data.text;
 };
+
+const tools = [
+  {
+    type: "function",
+    function: {
+      name: "create_document",
+      description: "Creates a markdown document in a specific folder.",
+      parameters: {
+        type: "object",
+        properties: {
+          filename: { type: "string", description: "The name of the markdown file (without extension)." },
+          title: { type: "string", description: "The title of the markdown file." },
+          content: { type: "string", description: "The content of the markdown file." }
+        },
+        required: ["filename", "content"]
+      }
+    }
+  }
+];
+
+const createDocument = async (filename, title, content, projectId) => {
+  try {
+    // Define the full path for the markdown file
+    const filePath = `${process.cwd()}/public/files/${filename}.md`;
+
+    // Write content to the file
+    fs.writeFileSync(filePath, content);
+
+    // Add document to database
+    const newDocument = await Document.create({
+      name: title,
+      filePath: `files/${filename}.md`,
+      content: '',
+      ProjectId: projectId,
+    });
+
+    console.log(`Markdown file created: ${filePath}`);
+  } catch (error) {
+    console.error('Error creating document:', error);
+  }
+}
+
 
 export default handler;
