@@ -9,11 +9,32 @@ import { version as pdfjsVersion } from "pdfjs-dist";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/default-layout/lib/styles/index.css";
 
+interface Project {
+  id: string;
+  name: string;
+  Documents: Document[];
+  Messages: Message[];
+}
+
+interface Document {
+  id: string;
+  name: string;
+  filePath: string;
+  ProjectId: string;
+}
+
+interface Message {
+  id: string;
+  text: string;
+  sender: string;
+  ProjectId: string;
+}
+
 const MainLayout = () => {
-  const [projects, setProjects] = useState([]);
-  const [selectedProject, setSelectedProject] = useState(null);
-  const [documents, setDocuments] = useState([]);
-  const [messages, setMessages] = useState([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [isAiProcessing, setIsAiProcessing] = useState(false);
@@ -59,7 +80,7 @@ const MainLayout = () => {
     }
   };
 
-  const handleDeleteProject = async (projectId) => {
+  const handleDeleteProject = async (projectId: string) => {
     if (window.confirm("Are you sure you want to delete this project?")) {
       // Delete all documents associated with the project
       const projectDocuments = documents.filter((doc) => doc.ProjectId === projectId);
@@ -141,7 +162,7 @@ const MainLayout = () => {
     }
   };
 
-  const handleDeleteDocument = async (docId) => {
+  const handleDeleteDocument = async (docId: string) => {
     if (window.confirm("Are you sure you want to delete this document?")) {
       const documentToDelete = documents.find((d) => d.id === docId);
       const response = await fetch('/api/documents', {
@@ -218,7 +239,7 @@ const MainLayout = () => {
     }
   };
 
-  const handleDeleteMessage = async (messageId) => {
+  const handleDeleteMessage = async (messageId: string) => {
     if (window.confirm("Are you sure you want to delete this message?")) {
       const response = await fetch(`/api/messages?id=${messageId}`, {
         method: 'DELETE',
