@@ -111,18 +111,32 @@ const MainLayout = () => {
       if (response.ok) {
         const newDocument = await response.json();
         setDocuments((prev) => [...prev, newDocument]);
+  
+        // Add a new message to the database
+        const newMessage = {
+          text: `A new document named ${newDocument.name} is uploaded.`,
+          sender: 'developer',
+          ProjectId: selectedProject.id,
+        };
+  
+        await fetch('/api/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(newMessage),
+        });
       } else {
         console.error('File upload failed');
       }
-
     } else {
       alert('Invalid file type. Only PDF, MD, TXT, DOC, and DOCX files are allowed.');
     }
-
   };
 
   const handleDeleteDocument = async (docId) => {
     if (window.confirm("Are you sure you want to delete this document?")) {
+      const documentToDelete = documents.find((d) => d.id === docId);
       const response = await fetch('/api/documents', {
         method: 'DELETE',
         headers: {
@@ -137,6 +151,21 @@ const MainLayout = () => {
           setSelectedDocument(null);
           setShowPreview(false);
         }
+  
+        // Add a new message to the database
+        const newMessage = {
+          text: `${documentToDelete.name} document is deleted.`,
+          sender: 'developer',
+          ProjectId: selectedProject.id,
+        };
+  
+        await fetch('/api/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(newMessage),
+        });
       } else {
         console.error('Failed to delete document');
       }
