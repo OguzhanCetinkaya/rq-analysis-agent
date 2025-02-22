@@ -74,7 +74,7 @@ const handler = async (req, res) => {
 
     const updatedMessages = await get_messages(ProjectId);
     const updatedDocuments = await get_documents(ProjectId);
-    res.status(200).json(updatedMessages, updatedDocuments);
+    res.status(200).json({ messages: updatedMessages, documents: updatedDocuments });
 
   } else if (req.method === 'DELETE') {
     const { id } = req.query;

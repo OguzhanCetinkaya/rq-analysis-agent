@@ -231,9 +231,11 @@ const MainLayout = () => {
         setIsAiProcessing(false);
         return;
       }
-  
-      const {messages, documents} = await response.json();
-      
+      const responseData = await response.json();
+      console.log("User message saved successfully", responseData);
+      const {messages, documents} = responseData;
+      console.log("### messages", messages);
+      console.log("### documents", documents);
       setMessages(messages);
       setDocuments(documents);
       setNewMessage("");
