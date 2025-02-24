@@ -31,7 +31,7 @@ const handler = async (req, res) => {
             temperature:0.7,
             tools: tools, // Include the tool definition
             tool_choice: "auto", // Allows GPT-4o to decide when to call the tool
-            max_completion_tokens:8000,
+            max_completion_tokens:16384,
           });
 
           const assistantMessage = response.choices[0].message;
@@ -45,7 +45,7 @@ const handler = async (req, res) => {
                 createDocument(args.filename, args.title, args.content, ProjectId);
 
                 const aiMessage = {
-                  text: `The document "${args.filename}.md" has been created.`,
+                  text: `The document "${args.title}" has been created.`,
                   sender: 'assistant',
                   ProjectId,
                 };
@@ -96,7 +96,9 @@ const handler = async (req, res) => {
 const prepare_messages = async (projectId) => {
   const documents_content = await get_project_documents_content(projectId);
   const system_instructions = `
-You are an AI System Analyst assisting a human system analyst in creating requirement analysis documents. Your primary responsibilities include analyzing project documents, detecting gaps or contradictions, proactively asking clarifying questions, and generating structured documents upon request.
+You are an AI System Analyst assisting a human system analyst in creating requirement analysis documents. 
+Your name is 'SAGE' - Systems Analysis and Guidance Engine
+Your primary responsibilities include analyzing project documents, detecting gaps or contradictions, proactively asking clarifying questions, and generating structured documents upon request.
 
 # Document Handling
 - You will process and incorporate text, markdown, and PDF documents into your context in the order they are uploaded.
@@ -125,6 +127,7 @@ You are an AI System Analyst assisting a human system analyst in creating requir
 - You will generate documents only when explicitly asked to do so by the human analyst.
 - The generated document will be based on your context and conversation history.
 - The human analyst will review and may request changes to the generated document.
+- Before you create a document, you will inform the human analyst about document structure and ask for confirmation.
 
 # Interaction Format
 - You will interact with the human analyst through a text-based chat.
@@ -133,8 +136,10 @@ You are an AI System Analyst assisting a human system analyst in creating requir
 - You will not log interactions or store past conversations beyond the current session.
 
 # Available Documents
-Here you can find the available documents below:
+The system analyst uploaded the following documents below:
+<start_of_documents>
 ${documents_content}
+<end_of_documents>
   `
   const system_message = {
     role: "system",
@@ -235,7 +240,7 @@ const tools = [
       parameters: {
         type: "object",
         properties: {
-          filename: { type: "string", description: "The name of the markdown file (without extension)." },
+          filename: { type: "string", description: "The name of the markdown file." },
           title: { type: "string", description: "The title of the markdown file." },
           content: { type: "string", description: "The content of the markdown file." }
         },
@@ -247,8 +252,7 @@ const tools = [
 
 const createDocument = async (filename, title, content, projectId) => {
   try {
-    // Define the full path for the markdown file
-    const filePath = `${process.cwd()}/public/files/${filename}.md`;
+    const filePath = `${process.cwd()}/public/files/${filename}`;
 
     // Write content to the file
     fs.writeFileSync(filePath, content);
@@ -256,12 +260,11 @@ const createDocument = async (filename, title, content, projectId) => {
     // Add document to database
     const newDocument = await Document.create({
       name: title,
-      filePath: `files/${filename}.md`,
+      filePath: `files/${filename}`,
       content: '',
       ProjectId: projectId,
     });
 
-    console.log(`Markdown file created: ${filePath}`);
   } catch (error) {
     console.error('Error creating document:', error);
   }

@@ -149,7 +149,8 @@ const MainLayout = () => {
         });
   
         if (messageResponse.ok) {
-          const messages = await messageResponse.json();
+          const responseData = await messageResponse.json();
+          const {messages, documents} = responseData;
           setMessages(messages);
         } else {
           console.error('Failed to save message');
@@ -196,7 +197,8 @@ const MainLayout = () => {
         });
 
         if (messageResponse.ok) {
-          const messages = await messageResponse.json();
+          const responseData = await messageResponse.json();
+          const {messages, documents} = responseData;
           setMessages(messages);
         } else {
           console.error('Failed to save message');
@@ -232,10 +234,8 @@ const MainLayout = () => {
         return;
       }
       const responseData = await response.json();
-      console.log("User message saved successfully", responseData);
       const {messages, documents} = responseData;
-      console.log("### messages", messages);
-      console.log("### documents", documents);
+
       setMessages(messages);
       setDocuments(documents);
       setNewMessage("");
@@ -264,8 +264,8 @@ const MainLayout = () => {
   const handleDocumentClick = async (document: Document) => {
     setSelectedDocument(document);
     setShowPreview(true);
-
-    const type = document.name.split(".").pop()?.toLowerCase() || "";
+    console.log("### Document", document);
+    const type = document.filePath.split(".").pop()?.toLowerCase() || "";
 
     if (type === "pdf") {
       setPreviewType("pdf");
